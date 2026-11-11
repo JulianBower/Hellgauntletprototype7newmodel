@@ -1,0 +1,12 @@
+{
+  "type": "hellgauntlet:hellskull",
+  "biomes": "#hellgauntlet:has_structure/hellskull",
+  "step": "surface_structures",
+  "terrain_adaptation": "beard_thin",
+  "spawn_overrides": {},
+  "start_pool": "hellgauntlet:hellskull/start",
+  "size": 1,
+  "search_min_y": 33,
+  "search_max_y": 110,
+  "clearance": 10
+}
