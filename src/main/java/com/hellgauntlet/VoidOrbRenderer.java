@@ -40,7 +40,8 @@ public class VoidOrbRenderer extends EntityRenderer<VoidOrbEntity> {
         poseStack.popPose();
 
         // 3. lightning
-        VoidFx.sphereArcs(additive, poseStack.last(), CORE_RADIUS, 4, entity.getId(), entity.tickCount);
+        VoidFx.sphereArcs(additive, poseStack.last(), CORE_RADIUS, 4, entity.getId(), entity.tickCount,
+                CORE_RADIUS * 0.07F, 255);
 
         poseStack.popPose();
         super.render(entity, yaw, partialTick, poseStack, buffer, light);

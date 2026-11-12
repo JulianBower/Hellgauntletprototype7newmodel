@@ -22,26 +22,30 @@ public final class VoidFx {
 
     /** Pitch black, fullbright latitude/longitude sphere. Use with an entityTranslucent render type. */
     public static void sphere(VertexConsumer vc, PoseStack.Pose pose, float radius, int stacks, int slices) {
+        sphere(vc, pose, radius, stacks, slices, 255);
+    }
+
+    public static void sphere(VertexConsumer vc, PoseStack.Pose pose, float radius, int stacks, int slices, int alpha) {
         for (int i = 0; i < stacks; i++) {
             double phi0 = Math.PI * i / stacks;
             double phi1 = Math.PI * (i + 1) / stacks;
             for (int j = 0; j < slices; j++) {
                 double t0 = 2.0 * Math.PI * j / slices;
                 double t1 = 2.0 * Math.PI * (j + 1) / slices;
-                blackVertex(vc, pose, radius, phi0, t0);
-                blackVertex(vc, pose, radius, phi0, t1);
-                blackVertex(vc, pose, radius, phi1, t1);
-                blackVertex(vc, pose, radius, phi1, t0);
+                blackVertex(vc, pose, radius, phi0, t0, alpha);
+                blackVertex(vc, pose, radius, phi0, t1, alpha);
+                blackVertex(vc, pose, radius, phi1, t1, alpha);
+                blackVertex(vc, pose, radius, phi1, t0, alpha);
             }
         }
     }
 
-    private static void blackVertex(VertexConsumer vc, PoseStack.Pose pose, float radius, double phi, double theta) {
+    private static void blackVertex(VertexConsumer vc, PoseStack.Pose pose, float radius, double phi, double theta, int alpha) {
         float nx = (float) (Math.sin(phi) * Math.cos(theta));
         float ny = (float) Math.cos(phi);
         float nz = (float) (Math.sin(phi) * Math.sin(theta));
         vc.addVertex(pose, nx * radius, ny * radius, nz * radius)
-                .setColor(0, 0, 0, 255)
+                .setColor(0, 0, 0, alpha)
                 .setUv(0.0F, 0.0F)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setLight(LightTexture.FULL_BRIGHT)
@@ -101,25 +105,28 @@ public final class VoidFx {
     }
 
     /** `count` small arcs close to the surface of a sphere. New random shape every 2 ticks. */
-    public static void sphereArcs(VertexConsumer vc, PoseStack.Pose pose, float radius, int count, long seed, int tick) {
+    public static void sphereArcs(VertexConsumer vc, PoseStack.Pose pose, float radius, int count, long seed, int tick,
+                                  float width, int alpha) {
         long step = tick / 2;
         for (int arc = 0; arc < count; arc++) {
             RandomSource rnd = RandomSource.create(seed * 341873128712L + step * 132897987541L + arc * 7919L);
             Vec3 a = randomDir(rnd);
             Vec3 tangent = a.cross(randomDir(rnd)).normalize();
             double span = 0.8 + rnd.nextDouble() * 0.7; // angle covered along the surface
-            int segments = 6;
+            int segments = Math.max(6, Math.min(24, (int) (radius * span / 0.6)));
+            double lift = Math.min(radius * 0.08, 0.3);
+            double wobble = Math.min(radius * 0.18, 0.45);
             List<Vec3> pts = new ArrayList<>();
             for (int i = 0; i <= segments; i++) {
                 double t = (double) i / segments;
                 double ang = (t - 0.5) * span;
                 Vec3 dir = a.scale(Math.cos(ang)).add(tangent.scale(Math.sin(ang)));
-                double r = radius * (1.08 + rnd.nextDouble() * 0.3);
+                double r = radius + lift + rnd.nextDouble() * Math.min(radius * 0.3, 0.6);
                 Vec3 jitter = new Vec3(rnd.nextDouble() - 0.5, rnd.nextDouble() - 0.5, rnd.nextDouble() - 0.5)
-                        .scale(radius * 0.18);
+                        .scale(wobble);
                 pts.add(dir.scale(r).add(i == 0 || i == segments ? Vec3.ZERO : jitter));
             }
-            polyline(vc, pose, pts, radius * 0.07F, 255);
+            polyline(vc, pose, pts, width, alpha);
         }
     }
 

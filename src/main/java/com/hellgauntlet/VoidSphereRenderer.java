@@ -2,20 +2,17 @@ package com.hellgauntlet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
+/** The explosion: same look as the orb (black sphere, dark red glow, small lightning), grown to the blast size. */
 public class VoidSphereRenderer extends EntityRenderer<VoidSphereEntity> {
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(HellGauntletMod.MODID, "textures/entity/void_sphere.png");
-    private static final int STACKS = 14;
-    private static final int SLICES = 20;
 
     public VoidSphereRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -42,35 +39,25 @@ public class VoidSphereRenderer extends EntityRenderer<VoidSphereEntity> {
             return;
         }
 
-        VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
-        PoseStack.Pose pose = poseStack.last();
+        int stacks = Math.max(14, Math.min(32, (int) (radius * 3)));
+        VertexConsumer core = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
+        VoidFx.sphere(core, poseStack.last(), radius, stacks, stacks + 6, alpha);
 
-        for (int i = 0; i < STACKS; i++) {
-            double phi0 = Math.PI * i / STACKS;
-            double phi1 = Math.PI * (i + 1) / STACKS;
-            for (int j = 0; j < SLICES; j++) {
-                double t0 = 2.0 * Math.PI * j / SLICES;
-                double t1 = 2.0 * Math.PI * (j + 1) / SLICES;
-                vertex(vc, pose, radius, phi0, t0, alpha);
-                vertex(vc, pose, radius, phi0, t1, alpha);
-                vertex(vc, pose, radius, phi1, t1, alpha);
-                vertex(vc, pose, radius, phi1, t0, alpha);
-            }
-        }
+        VertexConsumer additive = buffer.getBuffer(RenderType.lightning());
+
+        // glow ring that faces the camera and hugs the outline of the sphere
+        poseStack.pushPose();
+        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+        float glowWidth = Math.min(radius * 0.9F, 0.4F + radius * 0.25F);
+        VoidFx.haloRing(additive, poseStack.last(), radius * 0.97F, radius + glowWidth, (int) (150 * alpha / 255.0F));
+        poseStack.popPose();
+
+        // lightning, a new shape every 2 ticks; more of it on bigger spheres
+        int arcs = 6 + (int) (radius * 2.0F);
+        VoidFx.sphereArcs(additive, poseStack.last(), radius, arcs, entity.getId(), entity.tickCount,
+                0.05F + radius * 0.01F, alpha);
 
         super.render(entity, yaw, partialTick, poseStack, buffer, light);
-    }
-
-    private static void vertex(VertexConsumer vc, PoseStack.Pose pose, float radius, double phi, double theta, int alpha) {
-        float nx = (float) (Math.sin(phi) * Math.cos(theta));
-        float ny = (float) Math.cos(phi);
-        float nz = (float) (Math.sin(phi) * Math.sin(theta));
-        vc.addVertex(pose, nx * radius, ny * radius, nz * radius)
-                .setColor(0, 0, 0, alpha)
-                .setUv(0.0F, 0.0F)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(pose, nx, ny, nz);
     }
 
     @Override
