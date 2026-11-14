@@ -1,10 +1,11 @@
 {
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "pattern": ["OIO", "ONO", "OIO"],
+  "pattern": ["OCO", "ONO", "OIO"],
   "key": {
     "O": { "item": "minecraft:obsidian" },
     "I": { "item": "minecraft:netherite_ingot" },
+    "C": { "item": "hellgauntletboss:corrupted_core" },
     "N": { "item": "minecraft:nether_star" }
   },
   "result": { "id": "hellgauntlet:gauntlet_of_hell", "count": 1 }
